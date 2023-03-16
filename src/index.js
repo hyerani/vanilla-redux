@@ -1,61 +1,88 @@
 import { createStore } from "redux";
 
-const add = document.getElementById("add");
-const minus = document.getElementById("minus");
-const number = document.querySelector("span");
+const form = document.querySelector("form");
+const input = document.querySelector("input");
+const ul = document.querySelector("ul");
 
-number.innerText = 0;
+const ADD_TODO = "ADD_TODO";
+const DELETE_TODO = "DELETE_TODO";
 
-const ADD = "ADD";
-const MINUS = "MINUS";
+const addToDo = (text) => {
+  return {
+    type: ADD_TODO,
+    text,
+  };
+};
 
-// data를 수정하는 한개의 function = reducer
-// return 값이 data 저장소 값이 됨
-const countModifier = (count = 0, action) => {
+const deleteToDo = (id) => {
+  return {
+    type: DELETE_TODO,
+    id,
+  };
+};
+
+const reducer = (state = [], action) => {
   switch (action.type) {
-    case ADD:
-      return count + 1;
-    case MINUS:
-      return count - 1;
+    case ADD_TODO:
+      // state를 변형시키지 않고 새로운 array를 만들어 내는 것이 중요!
+      return [...state, { text: action.text, id: Date.now() }];
+    case DELETE_TODO:
+      return state.filter((toDo) => toDo.id !== action.id);
     default:
-      return count;
+      return state;
   }
 };
 
-// data 저장소 = store
-const countStore = createStore(countModifier);
+const store = createStore(reducer);
 
-const onChange = () => {
-  number.innerText = countStore.getState();
+const dispatchAddToDo = (text) => {
+  store.dispatch(addToDo(text));
 };
 
-countStore.subscribe(onChange);
+const dispatchDeleteTodo = (e) => {
+  const id = parseInt(e.target.parentNode.id);
+  store.dispatch(deleteToDo(id));
+};
 
-// dispatch의 객체 안에 type은 이름을 변경 할 수 없음
-add.addEventListener("click", () => {
-  countStore.dispatch({ type: ADD });
-});
-minus.addEventListener("click", () => {
-  countStore.dispatch({ type: MINUS });
-});
+const paintToDos = () => {
+  const toDos = store.getState();
+  ul.innerHTML = "";
+  toDos.forEach((toDo) => {
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.innerText = "delete";
+    btn.addEventListener("click", dispatchDeleteTodo);
+    li.id = toDo.id;
+    li.innerText = toDo.text;
+    li.appendChild(btn);
+    ul.appendChild(li);
+  });
+};
 
-// VANILLA JS로 구현한 카운터 기능
-// let count = 0;
-// number.innerText = count;
+store.subscribe(paintToDos);
 
-// const updateText = () => {
-//   number.innerText = count;
+const onSubmit = (e) => {
+  e.preventDefault();
+  const toDo = input.value;
+  input.value = "";
+  dispatchAddToDo(toDo);
+};
+
+form.addEventListener("submit", onSubmit);
+
+// VANILLA JS로 구현한 TODO
+
+// const createToDo = (toDo) => {
+//   const li = document.createElement("li");
+//   li.innerText = toDo;
+//   ul.appendChild(li);
 // };
 
-// const handleAdd = () => {
-//   count = count + 1;
-//   updateText();
+// const onSubmit = (e) => {
+//   e.preventDefault();
+//   const toDo = input.value;
+//   input.value = "";
+//   createToDo(toDo);
 // };
 
-// const handleMinus = () => {
-//   count = count - 1;
-//   updateText();
-// };
-
-// add.addEventListener("click", handleAdd);
-// minus.addEventListener("click", handleMinus);
+// form.addEventListener("submit", onSubmit);
